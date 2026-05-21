@@ -246,6 +246,33 @@ class NativeView extends SurfaceView
     surfaceDestroyedNative();
   }
 
+  private static int sanitizeDpi(float dpi) {
+    if (Float.isNaN(dpi) || Float.isInfinite(dpi) || dpi <= 0)
+      return 0;
+
+    return Math.round(dpi);
+  }
+
+  private static int getDensityDpi(DisplayMetrics metrics) {
+    if (metrics.densityDpi > 0)
+      return metrics.densityDpi;
+
+    if (metrics.density > 0)
+      return Math.round(metrics.density * DisplayMetrics.DENSITY_DEFAULT);
+
+    return 0;
+  }
+
+  private static boolean isSuspiciousDpiPair(int xdpi, int ydpi) {
+    if (xdpi < 80 || ydpi < 80)
+      return true;
+
+    final int min = Math.min(xdpi, ydpi);
+    final int max = Math.max(xdpi, ydpi);
+
+    return max > min * 2;
+  }
+
   @Override public void run() {
     final Context context = getContext();
 
@@ -256,6 +283,18 @@ class NativeView extends SurfaceView
        application window metrics on some devices (XCSoar #1784). */
     ((Activity)context).getWindowManager().getDefaultDisplay()
       .getRealMetrics(metrics);
+    int xdpi = sanitizeDpi(metrics.xdpi);
+    int ydpi = sanitizeDpi(metrics.ydpi);
+
+    if (isSuspiciousDpiPair(xdpi, ydpi)) {
+      final int densityDpi = getDensityDpi(metrics);
+      if (densityDpi > 0) {
+        Log.w(TAG, "Ignoring suspicious physical display dpi " +
+              xdpi + "x" + ydpi + "; using densityDpi=" + densityDpi);
+        xdpi = densityDpi;
+        ydpi = densityDpi;
+      }
+    }
 
     try {
       /* Clear the shutdown flag from any previous session so the
@@ -272,7 +311,7 @@ class NativeView extends SurfaceView
       try {
         runNative(context, permissionManager,
                   r.width(), r.height(),
-                  (int)metrics.xdpi, (int)metrics.ydpi,
+                  xdpi, ydpi,
                   Build.PRODUCT);
       } finally {
         /* Set shutdown flag before stopping service so it does not
