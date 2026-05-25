@@ -68,7 +68,8 @@ GetDisplaySize([[maybe_unused]] const UI::Display &display, [[maybe_unused]] Pix
 
 void
 Initialise(const UI::Display &display, PixelSize new_size,
-           unsigned ui_scale, unsigned custom_dpi) noexcept
+           unsigned ui_scale, unsigned custom_dpi,
+           bool correct_display_dpi) noexcept
 {
   const unsigned width = new_size.width, height = new_size.height;
 
@@ -79,7 +80,7 @@ Initialise(const UI::Display &display, PixelSize new_size,
   if constexpr (!ScaleSupported())
     return;
 
-  const auto dpi = Display::GetDPI(display, custom_dpi);
+  const auto dpi = Display::GetDPI(display, custom_dpi, correct_display_dpi);
   const bool is_small_screen = IsSmallScreen(GetDisplaySize(display, new_size),
                                              dpi);
 

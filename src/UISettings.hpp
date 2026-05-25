@@ -31,6 +31,9 @@ struct UISettings {
   /** Override OS dpi settings */
   unsigned custom_dpi;
 
+  /** Use Android density if the reported physical display DPI is invalid */
+  bool correct_display_dpi;
+
   /** Position ThermalAssistant */
   enum class ThermalAssistantPosition: uint8_t {
     OFF,

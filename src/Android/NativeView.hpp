@@ -71,6 +71,7 @@ public:
 
   NativeView(JNIEnv *_env, jobject _obj, unsigned _width, unsigned _height,
              unsigned _xdpi, unsigned _ydpi,
+             unsigned _density_dpi,
              jstring _product) noexcept;
 
   void SetPointer(JNIEnv *env, UI::TopWindow *w) noexcept {

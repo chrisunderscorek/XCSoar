@@ -99,13 +99,14 @@ NativeView::Deinitialise(JNIEnv *env)
 NativeView::NativeView(JNIEnv *env, jobject _obj,
                        unsigned _width, unsigned _height,
                        unsigned _xdpi, unsigned _ydpi,
+                       unsigned _density_dpi,
                        jstring _product) noexcept
   :obj(env, _obj),
    width(_width), height(_height)
 {
   Java::String::CopyTo(env, _product, product, sizeof(product));
 
-  Display::ProvideDPI(_xdpi, _ydpi);
+  Display::ProvideDPI(_xdpi, _ydpi, _density_dpi);
 }
 
 static void

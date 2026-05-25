@@ -20,6 +20,7 @@
 #endif
 
 #include <cassert>
+#include <algorithm>
 
 #ifndef ANDROID
 static UnsignedPoint2D forced_dpi{};
@@ -27,6 +28,9 @@ static UnsignedPoint2D forced_dpi{};
 
 #ifdef HAVE_DPI_DETECTION
 static UnsignedPoint2D detected_dpi{};
+#ifdef ANDROID
+static unsigned detected_density_dpi;
+#endif
 #endif
 
 #if defined(USE_X11) || defined(MESA_KMS) || defined(HAVE_DPI_DETECTION)
@@ -93,7 +97,39 @@ void
 Display::ProvideDPI(unsigned x_dpi, unsigned y_dpi) noexcept
 {
   detected_dpi = {x_dpi, y_dpi};
+#ifdef ANDROID
+  detected_density_dpi = 0;
+#endif
 }
+
+#ifdef ANDROID
+void
+Display::ProvideDPI(unsigned x_dpi, unsigned y_dpi,
+                    unsigned density_dpi) noexcept
+{
+  detected_dpi = {x_dpi, y_dpi};
+  detected_density_dpi = density_dpi;
+}
+
+unsigned
+Display::GetDensityDPI() noexcept
+{
+  return detected_density_dpi;
+}
+
+bool
+Display::IsDetectedDPISuspicious() noexcept
+{
+  if (detected_dpi.x == 0 || detected_dpi.y == 0 ||
+      detected_density_dpi < 80 || detected_density_dpi > 640)
+    return false;
+
+  const unsigned min = std::min(detected_dpi.x, detected_dpi.y);
+  const unsigned max = std::max(detected_dpi.x, detected_dpi.y);
+
+  return min < 80 || max > 640 || max > min * 2;
+}
+#endif
 
 void
 Display::ProvideSizeMM(unsigned width_pixels, unsigned height_pixels,
@@ -113,7 +149,9 @@ Display::ProvideSizeMM(unsigned width_pixels, unsigned height_pixels,
 #endif
 
 UnsignedPoint2D
-Display::GetDPI([[maybe_unused]] const UI::Display &display, unsigned custom_dpi) noexcept
+Display::GetDPI([[maybe_unused]] const UI::Display &display,
+                unsigned custom_dpi,
+                bool correct_display_dpi) noexcept
 {
 #ifndef ANDROID
   if (forced_dpi.x > 0 && forced_dpi.y > 0)
@@ -122,6 +160,13 @@ Display::GetDPI([[maybe_unused]] const UI::Display &display, unsigned custom_dpi
 
   if (custom_dpi)
     return {custom_dpi, custom_dpi};
+
+#ifdef ANDROID
+  if (correct_display_dpi && IsDetectedDPISuspicious())
+    return {detected_density_dpi, detected_density_dpi};
+#else
+  (void)correct_display_dpi;
+#endif
 
 #ifdef HAVE_DPI_DETECTION
   if (detected_dpi.x > 0 && detected_dpi.y > 0)

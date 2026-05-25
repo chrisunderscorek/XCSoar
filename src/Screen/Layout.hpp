@@ -70,11 +70,14 @@ extern unsigned hit_radius;
  * @param screen_size the size of the screen in pixels
  * @param ui_scale the UI scale setting in percent
  * @param custom_dpi user defined DPI setting or 0 for system settings
+ * @param correct_display_dpi use Android density if detected x/y DPI is
+ * suspicious
  */
 void
 Initialise(const UI::Display &display,
            PixelSize screen_size, unsigned ui_scale=100,
-           unsigned custom_dpi=0) noexcept;
+           unsigned custom_dpi=0,
+           bool correct_display_dpi=false) noexcept;
 
 /**
  * Is scaling supported by this platform?

@@ -217,6 +217,7 @@ Java_org_xcsoar_NativeView_runNative(JNIEnv *env, jobject obj,
                                      jobject _permission_manager,
                                      jint width, jint height,
                                      jint xdpi, jint ydpi,
+                                     jint density_dpi,
                                      jstring product)
 try {
   const std::scoped_lock shutdown_lock{shutdown_mutex};
@@ -248,7 +249,7 @@ try {
   AtScopeExit(env) { TextUtil::Deinitialise(env); };
 
   assert(native_view == nullptr);
-  native_view = new NativeView(env, obj, width, height, xdpi, ydpi,
+  native_view = new NativeView(env, obj, width, height, xdpi, ydpi, density_dpi,
                                product);
   AtScopeExit() {
     delete native_view;

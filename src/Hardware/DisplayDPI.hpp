@@ -27,6 +27,17 @@ namespace Display {
 void
 ProvideDPI(unsigned x_dpi, unsigned y_dpi) noexcept;
 
+#ifdef ANDROID
+void
+ProvideDPI(unsigned x_dpi, unsigned y_dpi, unsigned density_dpi) noexcept;
+
+unsigned
+GetDensityDPI() noexcept;
+
+bool
+IsDetectedDPISuspicious() noexcept;
+#endif
+
 /**
  * This function gets called by our UI toolkit (the "Screen" library)
  * after it has determined the physical dimensions of the screen.
@@ -41,10 +52,13 @@ ProvideSizeMM(unsigned width_pixels, unsigned height_pixels,
  * width and height.
  *
  * @param custom_dpi overide system dpi settings, but not command line dpi
+ * @param correct_display_dpi use Android density if detected x/y DPI is
+ * suspicious
  * @return Number of pixels per logical inch along the screen width/height
  */
 [[gnu::const]]
 UnsignedPoint2D
-GetDPI(const UI::Display &display, unsigned custom_dpi=0) noexcept;
+GetDPI(const UI::Display &display, unsigned custom_dpi=0,
+       bool correct_display_dpi=false) noexcept;
 
 }

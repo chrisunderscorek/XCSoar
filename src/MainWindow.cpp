@@ -219,7 +219,8 @@ MainWindow::Initialise()
 {
   Layout::Initialise(GetDisplay(), GetSize(),
                      CommonInterface::GetUISettings().GetPercentScale(),
-                     CommonInterface::GetUISettings().custom_dpi);
+                     CommonInterface::GetUISettings().custom_dpi,
+                     CommonInterface::GetUISettings().correct_display_dpi);
 #ifdef DRAW_MOUSE_CURSOR
   SetCursorSize(CommonInterface::GetDisplaySettings().cursor_size);
   SetCursorColorsInverted(CommonInterface::GetDisplaySettings().invert_cursor_colors);
@@ -238,7 +239,10 @@ MainWindow::InitialiseConfigured()
 {
   const UISettings &ui_settings = CommonInterface::GetUISettings();
 
-  if ((ui_settings.scale != 100) || (ui_settings.info_boxes.scale_title_font != 100) || (ui_settings.custom_dpi != 0))
+  if ((ui_settings.scale != 100) ||
+      (ui_settings.info_boxes.scale_title_font != 100) ||
+      (ui_settings.custom_dpi != 0) ||
+      ui_settings.correct_display_dpi)
     /* call Initialise() again to reload fonts with the new scale */
     Initialise();
 
@@ -725,7 +729,8 @@ MainWindow::OnResize(PixelSize new_size) noexcept
 {
   Layout::Initialise(GetDisplay(), new_size,
                      CommonInterface::GetUISettings().GetPercentScale(),
-                     CommonInterface::GetUISettings().custom_dpi);
+                     CommonInterface::GetUISettings().custom_dpi,
+                     CommonInterface::GetUISettings().correct_display_dpi);
 
   SingleWindow::OnResize(new_size);
 
