@@ -246,6 +246,28 @@ class NativeView extends SurfaceView
     surfaceDestroyedNative();
   }
 
+  private static boolean isBigmeDevice() {
+    return Build.MANUFACTURER.toLowerCase().contains("bigme") ||
+      Build.BRAND.toLowerCase().contains("bigme") ||
+      Build.PRODUCT.toLowerCase().contains("bigme") ||
+      Build.DEVICE.toLowerCase().contains("bigme") ||
+      Build.MODEL.toLowerCase().contains("bigme") ||
+      Build.FINGERPRINT.toLowerCase().contains("bigme");
+  }
+
+  private static boolean isBigmeHiBreakDpiBug(DisplayMetrics metrics) {
+    final int width = metrics.widthPixels;
+    final int height = metrics.heightPixels;
+    final boolean isHiBreakSize =
+      (width == 824 && height == 1648) || (width == 1648 && height == 824);
+
+    return isBigmeDevice() &&
+      isHiBreakSize &&
+      metrics.densityDpi == 300 &&
+      Math.round(metrics.xdpi) == 188 &&
+      Math.round(metrics.ydpi) == 667;
+  }
+
   @Override public void run() {
     final Context context = getContext();
 
@@ -256,6 +278,14 @@ class NativeView extends SurfaceView
        application window metrics on some devices (XCSoar #1784). */
     ((Activity)context).getWindowManager().getDefaultDisplay()
       .getRealMetrics(metrics);
+    int xdpi = (int)metrics.xdpi;
+    int ydpi = (int)metrics.ydpi;
+
+    if (isBigmeHiBreakDpiBug(metrics)) {
+      Log.w(TAG, "Using densityDpi for Bigme HiBreak display dpi workaround");
+      xdpi = metrics.densityDpi;
+      ydpi = metrics.densityDpi;
+    }
 
     try {
       /* Clear the shutdown flag from any previous session so the
@@ -272,7 +302,7 @@ class NativeView extends SurfaceView
       try {
         runNative(context, permissionManager,
                   r.width(), r.height(),
-                  (int)metrics.xdpi, (int)metrics.ydpi,
+                  xdpi, ydpi,
                   Build.PRODUCT);
       } finally {
         /* Set shutdown flag before stopping service so it does not
