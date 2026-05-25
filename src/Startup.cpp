@@ -3,6 +3,7 @@
 
 #include "Startup.hpp"
 #include "Interface.hpp"
+#include "UISettings.hpp"
 #include "Components.hpp"
 #include "NetComponents.hpp"
 #include "BackendComponents.hpp"
@@ -11,6 +12,7 @@
 #include "ui/canvas/Features.hpp" // for SOFTWARE_ROTATE_DISPLAY
 #include "Profile/Profile.hpp"
 #include "Profile/Current.hpp"
+#include "Profile/Keys.hpp"
 #include "Profile/Settings.hpp"
 #include "Asset.hpp"
 #include "Simulator.hpp"
@@ -24,6 +26,7 @@
 #include "Input/InputEvents.hpp"
 #include "Input/InputQueue.hpp"
 #include "Dialogs/StartupDialog.hpp"
+#include "Dialogs/Message.hpp"
 #include "Dialogs/dlgSimulatorPrompt.hpp"
 #include "Dialogs/dlgQuickGuide.hpp"
 #include "Language/LanguageGlue.hpp"
@@ -66,6 +69,7 @@
 #include "Hardware/DisplayDPI.hpp"
 #include "Hardware/DisplayGlue.hpp"
 #include "util/Compiler.h"
+#include "util/StaticString.hxx"
 #include "NMEA/Aircraft.hpp"
 #include "Waypoint/Waypoints.hpp"
 #include "Waypoint/WaypointGlue.hpp"
@@ -127,6 +131,43 @@ static EDL::Glue *edl_glue;
 static AllMonitors *all_monitors;
 static GlideComputerTaskEvents *task_events;
 static DeviceFactory *device_factory;
+
+#ifdef ANDROID
+static void
+CheckDisplayDPICorrection(UISettings &ui_settings) noexcept
+{
+  const bool suspicious_dpi = Display::IsDetectedDPISuspicious();
+  const unsigned density_dpi = Display::GetDensityDPI();
+
+  if (suspicious_dpi && !ui_settings.correct_display_dpi &&
+      density_dpi > 0) {
+    StaticString<512> message;
+    message.Format(_("Android reports inconsistent physical display DPI. "
+                     "XCSoar can use Android's display density (%u dpi) "
+                     "instead. Enable display DPI correction?"),
+                   density_dpi);
+
+    if (ShowMessageBox(message.c_str(), _("Display DPI"),
+                       MB_YESNO | MB_ICONWARNING) == IDYES) {
+      ui_settings.correct_display_dpi = true;
+      Profile::Set(ProfileKeys::CorrectDisplayDPI, true);
+      Profile::Save();
+      LogFormat("Enabled display DPI correction");
+    }
+  } else if (!suspicious_dpi && ui_settings.correct_display_dpi) {
+    if (ShowMessageBox(_("Display DPI correction is enabled, but Android no "
+                         "longer reports inconsistent physical display DPI. "
+                         "Disable display DPI correction?"),
+                       _("Display DPI"),
+                       MB_YESNO | MB_ICONQUESTION) == IDYES) {
+      ui_settings.correct_display_dpi = false;
+      Profile::Set(ProfileKeys::CorrectDisplayDPI, false);
+      Profile::Save();
+      LogFormat("Disabled display DPI correction");
+    }
+  }
+}
+#endif
 
 static bool
 LoadProfile()
@@ -362,6 +403,10 @@ Startup(UI::Display &display)
 
   if (!LoadProfile())
     return false;
+
+#ifdef ANDROID
+  CheckDisplayDPICorrection(CommonInterface::SetUISettings());
+#endif
 
   operation.SetText(_("Initialising"));
 

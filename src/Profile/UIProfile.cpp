@@ -113,6 +113,7 @@ Profile::Load(const ProfileMap &map, UISettings &settings)
   map.Get(ProfileKeys::CustomDPI, settings.custom_dpi);
   if (settings.custom_dpi < 120 || settings.custom_dpi > 520)
     settings.custom_dpi = 0;
+  map.Get(ProfileKeys::CorrectDisplayDPI, settings.correct_display_dpi);
 
   /* Migrate old data if TA enabled */
   if (!map.GetEnum(ProfileKeys::TAPosition, settings.thermal_assistant_position)) {

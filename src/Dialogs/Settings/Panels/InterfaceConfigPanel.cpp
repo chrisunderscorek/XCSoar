@@ -24,6 +24,9 @@ using namespace std::chrono;
 enum ControlIndex {
   UIScale,
   CustomDPI,
+#ifdef ANDROID
+  CorrectDisplayDPI,
+#endif
   InputFile,
 #ifdef HAVE_NLS
   LanguageFile,
@@ -95,6 +98,15 @@ InterfaceConfigPanel::Prepare(ContainerWindow &parent,
     wp_dpi->RefreshDisplay();
   }
   SetExpertRow(CustomDPI);
+
+#ifdef ANDROID
+  AddBoolean(_("Correct display DPI"),
+             _("Uses Android's display density when the reported physical "
+               "xdpi/ydpi values are inconsistent. This works around "
+               "firmware that reports a wrong physical display resolution."),
+             settings.correct_display_dpi);
+  SetExpertRow(CorrectDisplayDPI);
+#endif
 
   AddFile(_("Events"),
           _("The Input Events file defines the menu system and how XCSoar responds to "
@@ -195,6 +207,12 @@ InterfaceConfigPanel::Save(bool &_changed) noexcept
   if (SaveValueEnum(CustomDPI, ProfileKeys::CustomDPI,
                     settings.custom_dpi))
     require_restart = changed = true;
+
+#ifdef ANDROID
+  if (SaveValue(CorrectDisplayDPI, ProfileKeys::CorrectDisplayDPI,
+                settings.correct_display_dpi))
+    require_restart = changed = true;
+#endif
 
   if (SaveValueFileReader(InputFile, ProfileKeys::InputFile))
     require_restart = changed = true;
